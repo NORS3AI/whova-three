@@ -1,0 +1,435 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
+<meta name="theme-color" content="#2f6df6" />
+<title>whova-three · Event App Mockup</title>
+<style>
+  :root {
+    --brand: #2f6df6;
+    --brand-dark: #1e50c8;
+    --brand-tint: #eaf1ff;
+    --accent: #12b3a6;
+    --amber: #f5a623;
+    --bg: #f2f4f8;
+    --card: #ffffff;
+    --ink: #16202e;
+    --muted: #6b7789;
+    --line: #e6eaf1;
+    --shadow: 0 8px 24px rgba(24, 39, 75, 0.08);
+    --radius: 16px;
+  }
+  @media (prefers-color-scheme: dark) {
+    :root {
+      --brand: #5b8bff;
+      --brand-dark: #3f6fe0;
+      --brand-tint: #1a2740;
+      --bg: #0e1420;
+      --card: #172033;
+      --ink: #eaf0fa;
+      --muted: #93a1b8;
+      --line: #253247;
+      --shadow: 0 8px 24px rgba(0, 0, 0, 0.35);
+    }
+  }
+  * { box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
+  html, body { margin: 0; padding: 0; }
+  body {
+    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+    background: var(--bg);
+    color: var(--ink);
+    line-height: 1.45;
+    display: flex;
+    justify-content: center;
+    min-height: 100vh;
+  }
+
+  /* Phone frame on desktop, full-bleed on mobile */
+  .device {
+    width: 100%;
+    max-width: 430px;
+    background: var(--bg);
+    min-height: 100vh;
+    position: relative;
+    display: flex;
+    flex-direction: column;
+    overflow: hidden;
+  }
+  @media (min-width: 480px) {
+    body { padding: 24px 0; align-items: flex-start; }
+    .device {
+      min-height: auto;
+      height: calc(100vh - 48px);
+      border-radius: 44px;
+      border: 12px solid #10151f;
+      box-shadow: 0 30px 70px rgba(16, 21, 31, 0.45);
+      overflow: hidden;
+    }
+  }
+
+  /* Scroll area */
+  .screen-wrap { flex: 1; overflow-y: auto; -webkit-overflow-scrolling: touch; }
+  .screen { display: none; padding-bottom: 24px; }
+  .screen.active { display: block; }
+
+  /* Top bar */
+  .topbar {
+    position: sticky; top: 0; z-index: 20;
+    background: linear-gradient(135deg, var(--brand), var(--brand-dark));
+    color: #fff;
+    padding: 14px 18px;
+    display: flex; align-items: center; gap: 12px;
+  }
+  .topbar h1 { font-size: 18px; margin: 0; font-weight: 700; flex: 1; }
+  .topbar .icon-btn { width: 34px; height: 34px; display: grid; place-items: center; border-radius: 10px; background: rgba(255,255,255,.16); font-size: 16px; }
+
+  /* Event hero (Home) */
+  .hero {
+    background: linear-gradient(135deg, var(--brand), var(--brand-dark));
+    color: #fff; padding: 4px 20px 22px;
+  }
+  .hero .banner {
+    height: 132px; border-radius: 14px; margin-bottom: 14px;
+    background:
+      radial-gradient(120px 120px at 82% 18%, rgba(255,255,255,.28), transparent 60%),
+      linear-gradient(120deg, #12b3a6, #2f6df6 55%, #7a5cff);
+    display: flex; align-items: flex-end; padding: 12px; position: relative; overflow: hidden;
+  }
+  .hero .banner::after {
+    content: "SUMMIT 2026"; position: absolute; top: 14px; left: 14px;
+    font-weight: 800; letter-spacing: 2px; font-size: 12px; opacity: .9;
+  }
+  .hero .banner .pill { background: rgba(0,0,0,.28); border-radius: 999px; padding: 4px 10px; font-size: 11px; font-weight: 600; }
+  .hero h2 { margin: 0 0 6px; font-size: 21px; font-weight: 800; }
+  .hero .meta { font-size: 13px; opacity: .92; display: flex; flex-direction: column; gap: 3px; }
+  .hero .meta span::before { margin-right: 7px; }
+
+  section { padding: 0 16px; }
+  .section-title { font-size: 13px; text-transform: uppercase; letter-spacing: .6px; color: var(--muted); font-weight: 700; margin: 20px 4px 10px; }
+
+  /* Shortcut grid */
+  .grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 10px; }
+  .tile {
+    background: var(--card); border-radius: var(--radius); padding: 12px 6px;
+    text-align: center; box-shadow: var(--shadow); cursor: pointer;
+    display: flex; flex-direction: column; align-items: center; gap: 7px;
+    transition: transform .12s ease;
+  }
+  .tile:active { transform: scale(.94); }
+  .tile .emoji { font-size: 22px; }
+  .tile .label { font-size: 11px; font-weight: 600; color: var(--ink); }
+  .tile .badge {
+    position: absolute; margin: -8px 0 0 22px; background: var(--amber); color:#fff;
+    font-size: 10px; font-weight: 700; border-radius: 999px; padding: 1px 6px;
+  }
+
+  /* Cards */
+  .card { background: var(--card); border-radius: var(--radius); box-shadow: var(--shadow); padding: 14px; margin: 0 0 12px; }
+  .card.tap { cursor: pointer; }
+  .announce { display: flex; gap: 12px; align-items: flex-start; }
+  .announce .dot { width: 8px; height: 8px; border-radius: 50%; background: var(--brand); margin-top: 6px; flex: none; }
+  .announce .body h4 { margin: 0 0 3px; font-size: 14px; }
+  .announce .body p { margin: 0; font-size: 13px; color: var(--muted); }
+  .announce .body .time { font-size: 11px; color: var(--muted); margin-top: 5px; }
+
+  /* Agenda */
+  .daybar { display: flex; gap: 8px; padding: 12px 16px 4px; overflow-x: auto; position: sticky; top: 0; background: var(--bg); z-index: 5; }
+  .day { flex: none; padding: 8px 14px; border-radius: 999px; background: var(--card); border: 1px solid var(--line); font-size: 13px; font-weight: 600; color: var(--muted); cursor: pointer; }
+  .day.active { background: var(--brand); color: #fff; border-color: var(--brand); }
+  .session { display: flex; gap: 12px; align-items: stretch; }
+  .session .rail { flex: none; width: 58px; text-align: right; }
+  .session .rail .start { font-weight: 700; font-size: 13px; }
+  .session .rail .end { font-size: 11px; color: var(--muted); }
+  .session .track { flex: none; width: 3px; border-radius: 3px; background: var(--brand); }
+  .session .info { flex: 1; }
+  .session .info h4 { margin: 0 0 4px; font-size: 15px; }
+  .session .info .room { font-size: 12px; color: var(--muted); }
+  .session .info .spk { font-size: 12px; color: var(--muted); margin-top: 6px; display: flex; align-items: center; gap: 6px; }
+  .tag { display: inline-block; font-size: 10px; font-weight: 700; padding: 2px 8px; border-radius: 999px; background: var(--brand-tint); color: var(--brand-dark); margin-bottom: 6px; }
+  .star { flex: none; font-size: 20px; color: var(--line); cursor: pointer; align-self: center; }
+  .star.on { color: var(--amber); }
+
+  /* Attendees / Community rows */
+  .avatar { width: 44px; height: 44px; border-radius: 50%; flex: none; display: grid; place-items: center; color: #fff; font-weight: 700; font-size: 15px; }
+  .row { display: flex; gap: 12px; align-items: center; }
+  .row .grow { flex: 1; min-width: 0; }
+  .row h4 { margin: 0; font-size: 15px; }
+  .row .sub { font-size: 12px; color: var(--muted); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+  .btn {
+    border: none; border-radius: 999px; padding: 7px 14px; font-size: 12px; font-weight: 700; cursor: pointer;
+    background: var(--brand); color: #fff;
+  }
+  .btn.ghost { background: var(--brand-tint); color: var(--brand-dark); }
+
+  .search { margin: 12px 16px 0; }
+  .search input {
+    width: 100%; border: 1px solid var(--line); background: var(--card); color: var(--ink);
+    border-radius: 12px; padding: 11px 14px; font-size: 14px; outline: none;
+  }
+
+  .board .row { align-items: flex-start; }
+  .board .count { font-size: 12px; color: var(--brand-dark); font-weight: 700; background: var(--brand-tint); border-radius: 999px; padding: 3px 9px; }
+
+  /* Messages */
+  .msg .preview { font-size: 13px; color: var(--muted); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+  .msg .when { font-size: 11px; color: var(--muted); flex: none; }
+  .unread { width: 10px; height: 10px; border-radius: 50%; background: var(--brand); flex: none; }
+
+  /* Bottom tab bar */
+  .tabbar {
+    display: flex; background: var(--card); border-top: 1px solid var(--line);
+    padding: 8px 4px calc(8px + env(safe-area-inset-bottom));
+  }
+  .tab { flex: 1; text-align: center; color: var(--muted); font-size: 10px; font-weight: 600; cursor: pointer; padding: 2px 0; }
+  .tab .ico { font-size: 20px; display: block; line-height: 1.2; }
+  .tab.active { color: var(--brand); }
+
+  .demo-note {
+    font-size: 11px; color: var(--muted); text-align: center; padding: 14px 24px 4px;
+  }
+  .empty { text-align:center; color: var(--muted); font-size: 13px; padding: 30px; }
+</style>
+</head>
+<body>
+<div class="device">
+  <div class="screen-wrap" id="scrollArea">
+
+    <!-- ============ HOME ============ -->
+    <div class="screen active" data-screen="home">
+      <div class="hero">
+        <div class="banner"><span class="pill">🔴 Live now · Keynote Hall A</span></div>
+        <h2>Global Tech Summit 2026</h2>
+        <div class="meta">
+          <span>📅 &nbsp;Mar 12–14, 2026</span>
+          <span>📍 &nbsp;Moscone Center, San Francisco</span>
+          <span>👥 &nbsp;2,480 attendees</span>
+        </div>
+      </div>
+
+      <div class="section-title">Quick actions</div>
+      <section>
+        <div class="grid">
+          <div class="tile" onclick="go('agenda')"><span class="emoji">📅</span><span class="label">Agenda</span></div>
+          <div class="tile" onclick="go('attendees')"><span class="emoji">👥</span><span class="label">Attendees</span></div>
+          <div class="tile" onclick="go('community')"><span class="emoji">💬</span><span class="label">Community</span></div>
+          <div class="tile" onclick="go('messages')"><span class="badge">3</span><span class="emoji">✉️</span><span class="label">Messages</span></div>
+          <div class="tile" onclick="go('agenda')"><span class="emoji">🎤</span><span class="label">Speakers</span></div>
+          <div class="tile" onclick="alert('Exhibitors — coming in a later phase')"><span class="emoji">🏢</span><span class="label">Exhibitors</span></div>
+          <div class="tile" onclick="alert('Sponsors — coming in a later phase')"><span class="emoji">⭐</span><span class="label">Sponsors</span></div>
+          <div class="tile" onclick="alert('Map — coming in a later phase')"><span class="emoji">🗺️</span><span class="label">Maps</span></div>
+        </div>
+      </section>
+
+      <div class="section-title">Latest announcements</div>
+      <section>
+        <div class="card announce">
+          <div class="dot"></div>
+          <div class="body">
+            <h4>Keynote starting soon 🎬</h4>
+            <p>Doors to Hall A are open. Grab a seat — the opening keynote begins at 9:00 AM.</p>
+            <div class="time">8:42 AM · Organizer</div>
+          </div>
+        </div>
+        <div class="card announce">
+          <div class="dot" style="background:var(--accent)"></div>
+          <div class="body">
+            <h4>Lunch &amp; networking 🍽️</h4>
+            <p>Boxed lunches available on Level 2. Join the AI/ML meetup table near the windows.</p>
+            <div class="time">Today · 11:15 AM</div>
+          </div>
+        </div>
+        <div class="card announce">
+          <div class="dot" style="background:var(--amber)"></div>
+          <div class="body">
+            <h4>Wi-Fi details 📶</h4>
+            <p>Network: <b>Summit2026</b> · Password: <b>innovate</b></p>
+            <div class="time">Pinned</div>
+          </div>
+        </div>
+      </section>
+      <div class="demo-note">Static mockup · sample data · whova-three</div>
+    </div>
+
+    <!-- ============ AGENDA ============ -->
+    <div class="screen" data-screen="agenda">
+      <div class="topbar"><h1>Agenda</h1><div class="icon-btn">🔍</div><div class="icon-btn">⭐</div></div>
+      <div class="daybar">
+        <div class="day active">Thu · 12</div>
+        <div class="day">Fri · 13</div>
+        <div class="day">Sat · 14</div>
+      </div>
+      <section style="padding-top:12px">
+        <div class="card">
+          <div class="session">
+            <div class="rail"><div class="start">9:00</div><div class="end">AM</div></div>
+            <div class="track"></div>
+            <div class="info">
+              <span class="tag">Keynote</span>
+              <h4>Opening Keynote: The Next Decade of AI</h4>
+              <div class="room">📍 Keynote Hall A</div>
+              <div class="spk">🎤 Dr. Amara Osei · Chief Scientist, Nimbus</div>
+            </div>
+            <div class="star" onclick="toggleStar(this)">☆</div>
+          </div>
+        </div>
+        <div class="card">
+          <div class="session">
+            <div class="rail"><div class="start">10:30</div><div class="end">AM</div></div>
+            <div class="track" style="background:var(--accent)"></div>
+            <div class="info">
+              <span class="tag" style="background:#d9f6f2;color:#0a7d72">Workshop</span>
+              <h4>Hands-on: Building with React Native &amp; Expo</h4>
+              <div class="room">📍 Room 204</div>
+              <div class="spk">🎤 Liang Wu · Staff Engineer</div>
+            </div>
+            <div class="star on" onclick="toggleStar(this)">★</div>
+          </div>
+        </div>
+        <div class="card">
+          <div class="session">
+            <div class="rail"><div class="start">1:00</div><div class="end">PM</div></div>
+            <div class="track" style="background:#7a5cff"></div>
+            <div class="info">
+              <span class="tag" style="background:#ece7ff;color:#5b3fd6">Panel</span>
+              <h4>Scaling Startups: Lessons from the Trenches</h4>
+              <div class="room">📍 Hall C</div>
+              <div class="spk">🎤 4 speakers</div>
+            </div>
+            <div class="star" onclick="toggleStar(this)">☆</div>
+          </div>
+        </div>
+        <div class="card">
+          <div class="session">
+            <div class="rail"><div class="start">3:30</div><div class="end">PM</div></div>
+            <div class="track" style="background:var(--amber)"></div>
+            <div class="info">
+              <span class="tag" style="background:#fdeccd;color:#a56a00">Session</span>
+              <h4>Designing for Trust in Consumer Apps</h4>
+              <div class="room">📍 Room 118</div>
+              <div class="spk">🎤 Priya Nair · Head of Design</div>
+            </div>
+            <div class="star" onclick="toggleStar(this)">☆</div>
+          </div>
+        </div>
+      </section>
+    </div>
+
+    <!-- ============ COMMUNITY ============ -->
+    <div class="screen board" data-screen="community">
+      <div class="topbar"><h1>Community</h1><div class="icon-btn">➕</div></div>
+      <section style="padding-top:14px">
+        <div class="card tap row">
+          <div class="avatar" style="background:#2f6df6">🎯</div>
+          <div class="grow"><h4>Meet-ups &amp; Networking</h4><div class="sub">Find people to grab coffee with</div></div>
+          <div class="count">24</div>
+        </div>
+        <div class="card tap row">
+          <div class="avatar" style="background:#12b3a6">🚗</div>
+          <div class="grow"><h4>Ride Share</h4><div class="sub">Share rides to/from the venue</div></div>
+          <div class="count">11</div>
+        </div>
+        <div class="card tap row">
+          <div class="avatar" style="background:#f5a623">💼</div>
+          <div class="grow"><h4>Job Board</h4><div class="sub">Who's hiring &amp; who's looking</div></div>
+          <div class="count">37</div>
+        </div>
+        <div class="card tap row">
+          <div class="avatar" style="background:#7a5cff">❓</div>
+          <div class="grow"><h4>Ask the Organizers</h4><div class="sub">Logistics, venue &amp; general Q&amp;A</div></div>
+          <div class="count">9</div>
+        </div>
+        <div class="card tap row">
+          <div class="avatar" style="background:#e0526b">🎉</div>
+          <div class="grow"><h4>Social &amp; After-hours</h4><div class="sub">Dinners, drinks &amp; side events</div></div>
+          <div class="count">18</div>
+        </div>
+      </section>
+    </div>
+
+    <!-- ============ ATTENDEES ============ -->
+    <div class="screen" data-screen="attendees">
+      <div class="topbar"><h1>Attendees</h1><div class="icon-btn">🔍</div></div>
+      <div class="search"><input placeholder="Search 2,480 attendees…" oninput="return false" /></div>
+      <section style="padding-top:12px">
+        <div class="card row" data-a>
+          <div class="avatar" style="background:#2f6df6">AO</div>
+          <div class="grow"><h4>Amara Osei</h4><div class="sub">Chief Scientist · Nimbus AI</div></div>
+          <button class="btn ghost">Say hi 👋</button>
+        </div>
+        <div class="card row" data-a>
+          <div class="avatar" style="background:#12b3a6">LW</div>
+          <div class="grow"><h4>Liang Wu</h4><div class="sub">Staff Engineer · Meridian</div></div>
+          <button class="btn ghost">Say hi 👋</button>
+        </div>
+        <div class="card row" data-a>
+          <div class="avatar" style="background:#f5a623">PN</div>
+          <div class="grow"><h4>Priya Nair</h4><div class="sub">Head of Design · Loop</div></div>
+          <button class="btn ghost">Say hi 👋</button>
+        </div>
+        <div class="card row" data-a>
+          <div class="avatar" style="background:#7a5cff">JC</div>
+          <div class="grow"><h4>Jordan Cole</h4><div class="sub">Founder · Northwind Labs</div></div>
+          <button class="btn ghost">Say hi 👋</button>
+        </div>
+        <div class="card row" data-a>
+          <div class="avatar" style="background:#e0526b">MK</div>
+          <div class="grow"><h4>Mina Khoury</h4><div class="sub">PM · Cloudscape</div></div>
+          <button class="btn ghost">Say hi 👋</button>
+        </div>
+        <div class="card row" data-a>
+          <div class="avatar" style="background:#3aa655">TB</div>
+          <div class="grow"><h4>Tomás Bianchi</h4><div class="sub">CTO · Vela Robotics</div></div>
+          <button class="btn ghost">Say hi 👋</button>
+        </div>
+      </section>
+    </div>
+
+    <!-- ============ MESSAGES ============ -->
+    <div class="screen msg" data-screen="messages">
+      <div class="topbar"><h1>Messages</h1><div class="icon-btn">✏️</div></div>
+      <section style="padding-top:14px">
+        <div class="card row">
+          <div class="avatar" style="background:#2f6df6">AO</div>
+          <div class="grow"><h4>Amara Osei</h4><div class="preview">Thanks for coming to the keynote! Let's…</div></div>
+          <div style="text-align:right;display:flex;flex-direction:column;align-items:flex-end;gap:6px"><div class="when">9:40 AM</div><div class="unread"></div></div>
+        </div>
+        <div class="card row">
+          <div class="avatar" style="background:#12b3a6">LW</div>
+          <div class="grow"><h4>Liang Wu</h4><div class="preview">Sure, I'll save you a seat at the workshop.</div></div>
+          <div class="when">Yesterday</div>
+        </div>
+        <div class="card row">
+          <div class="avatar" style="background:#7a5cff">📢</div>
+          <div class="grow"><h4>Organizer Team</h4><div class="preview">Your session bookmark starts in 15 min.</div></div>
+          <div class="when">Mon</div>
+        </div>
+      </section>
+      <div class="demo-note">Direct messaging &amp; group chats — wired to a backend in a later phase.</div>
+    </div>
+
+  </div>
+
+  <!-- ============ TAB BAR ============ -->
+  <nav class="tabbar">
+    <div class="tab active" data-tab="home" onclick="go('home')"><span class="ico">🏠</span>Home</div>
+    <div class="tab" data-tab="agenda" onclick="go('agenda')"><span class="ico">📅</span>Agenda</div>
+    <div class="tab" data-tab="community" onclick="go('community')"><span class="ico">💬</span>Community</div>
+    <div class="tab" data-tab="attendees" onclick="go('attendees')"><span class="ico">👥</span>People</div>
+    <div class="tab" data-tab="messages" onclick="go('messages')"><span class="ico">✉️</span>Inbox</div>
+  </nav>
+</div>
+
+<script>
+  function go(name) {
+    document.querySelectorAll('.screen').forEach(s => s.classList.toggle('active', s.dataset.screen === name));
+    document.querySelectorAll('.tab').forEach(t => t.classList.toggle('active', t.dataset.tab === name));
+    document.getElementById('scrollArea').scrollTo({ top: 0 });
+  }
+  function toggleStar(el) {
+    const on = el.classList.toggle('on');
+    el.textContent = on ? '★' : '☆';
+  }
+</script>
+</body>
+</html>
