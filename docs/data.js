@@ -64,10 +64,21 @@ window.DATA = {
   categories: ["General Discussion", "Event Questions", "Travel and Hotel", "Training and Sessions", "Vendors and Products", "Store Operations"],
 
   discussions: [
-    { id: "d1", cat: "Event Questions", title: "What's the Wi-Fi password?", author: "Liang Wu", role: "attendee", body: "Can't find it anywhere — anyone have it?", up: 12, official: "Network: RSA2026 · Password: retail (posted by Organizer)", replies: 3, pinned: true, time: "8:40 AM" },
-    { id: "d2", cat: "Travel and Hotel", title: "Best restaurants near the Opryland?", author: "Sara Delgado", role: "attendee", body: "First time in Nashville — where should we eat?", up: 21, official: null, replies: 14, pinned: false, time: "Yesterday" },
-    { id: "d3", cat: "Vendors and Products", title: "Anyone using BrightPay POS?", author: "Acme Shipping Supplies", role: "vendor", body: "Curious how it compares for a 2-register store.", up: 6, official: null, replies: 5, pinned: false, time: "Yesterday" },
-    { id: "d4", cat: "Store Operations", title: "Endcap ideas for spring?", author: "Amara Osei", role: "attendee", body: "Share your best-performing spring endcaps!", up: 9, official: null, replies: 7, pinned: false, time: "Mon" },
+    { id: "d1", cat: "Event Questions", title: "What's the Wi-Fi password?", author: "Liang Wu", role: "attendee", initials: "LW", color: "#12b3a6", body: "Can't find it anywhere — anyone have it?", up: 12, official: "Network: RSA2026 · Password: retail (posted by Organizer)", pinned: true, time: "8:40 AM",
+      replyList: [
+        { author: "Sara Delgado", initials: "SD", color: "#7a5cff", role: "attendee", text: "It's on the back of your badge too!", time: "8:44 AM" },
+        { author: "Liang Wu", initials: "LW", color: "#12b3a6", role: "attendee", text: "Found it, thanks 🙏", time: "8:46 AM" },
+      ] },
+    { id: "d2", cat: "Travel and Hotel", title: "Best restaurants near the Opryland?", author: "Sara Delgado", role: "attendee", initials: "SD", color: "#7a5cff", body: "First time in Nashville — where should we eat?", up: 21, official: null, pinned: false, time: "Yesterday",
+      replyList: [
+        { author: "Amara Osei", initials: "AO", color: "#2f6df6", role: "attendee", text: "Hattie B's for hot chicken — worth the line.", time: "Yesterday" },
+      ] },
+    { id: "d3", cat: "Vendors and Products", title: "Anyone using BrightPay POS?", author: "Acme Shipping Supplies", role: "vendor", initials: "AS", color: "#e0526b", body: "Curious how it compares for a 2-register store.", up: 6, official: null, pinned: false, time: "Yesterday",
+      replyList: [
+        { author: "Riverside Supply", initials: "RS", color: "#12b3a6", role: "attendee", text: "We switched last year, happy so far.", time: "Yesterday" },
+      ] },
+    { id: "d4", cat: "Store Operations", title: "Endcap ideas for spring?", author: "Amara Osei", role: "attendee", initials: "AO", color: "#2f6df6", body: "Share your best-performing spring endcaps!", up: 9, official: null, pinned: false, time: "Mon",
+      replyList: [] },
   ],
 
   photos: [
@@ -95,9 +106,18 @@ window.DATA = {
 
   // Admin Help Desk shared queue
   helpdeskQueue: [
-    { id: "t1", attendee: "Sara Delgado", cat: "Technical Issue", preview: "App won't load my schedule", status: "open", assignee: null, time: "9:20 AM" },
-    { id: "t2", attendee: "Liang Wu", cat: "Registration", preview: "Need to add a colleague", status: "assigned", assignee: "Taylor", time: "8:55 AM" },
-    { id: "t3", attendee: "Amara Osei", cat: "Venue", preview: "Where is the mother's room?", status: "resolved", assignee: "Priya", time: "Yesterday" },
+    { id: "t1", attendee: "Sara Delgado", cat: "Technical Issue", preview: "App won't load my schedule", status: "open", assignee: null, time: "9:20 AM",
+      msgs: [{ from: "them", text: "The app won't load my schedule — just spins.", time: "9:20 AM" }] },
+    { id: "t2", attendee: "Liang Wu", cat: "Registration", preview: "Need to add a colleague", status: "assigned", assignee: "Taylor", time: "8:55 AM",
+      msgs: [{ from: "them", text: "Can I add a colleague to my registration?", time: "8:55 AM" }, { from: "staff", text: "Sure — send me their name & email.", time: "8:58 AM" }] },
+    { id: "t3", attendee: "Amara Osei", cat: "Venue", preview: "Where is the mother's room?", status: "resolved", assignee: "Priya", time: "Yesterday",
+      msgs: [{ from: "them", text: "Where is the mother's room?", time: "Yesterday" }, { from: "staff", text: "Level 2 near the elevators. 🙂", time: "Yesterday" }] },
+  ],
+
+  // Admin moderation queue (reported content)
+  reported: [
+    { id: "r1", kind: "reply", ico: "💬", text: "“…this vendor is a total scam, stay away…”", flag: "Reported ×2" },
+    { id: "r2", kind: "photo", ico: "📸", text: "Blurry booth photo", flag: "Reported ×1" },
   ],
 
   helpdeskSuggestions: [

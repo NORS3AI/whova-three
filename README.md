@@ -24,10 +24,15 @@ Once GitHub Pages is enabled (see below), the prototype is live at:
 It works on a phone, tablet, or desktop. On desktop it's shown inside a phone
 frame; on your iPhone/iPad it fills the screen like a real app.
 
+> **This mockup is fully functional (Phase 2).** Actions really happen and are
+> saved on your device (via `localStorage`), so you can post, scan, and manage
+> exactly like the real app — then reload and it's all still there. Use **Reset
+> demo data** (Attendee → More, or Admin → System) to start fresh.
+
 ### What you can do in the prototype
 Tap the **role pill** in the top-right to switch between **Attendee**, **Vendor**,
 and **Admin** — one account, one login, one QR code, three different tool sets.
-The marquee flows actually work:
+Everything below is live, not a placeholder:
 
 - ⭐ **Star agenda sessions** → they land in *My Schedule* with double-booking warnings.
 - 💬 **Discussion Board** → filter by category, open threads, see "official answers", and the **"similar discussions"** suggester as you type a new title.
@@ -91,7 +96,7 @@ Grouped by role. ✅ = represented in the prototype · ⏳ = planned for the nat
 - ✅ Announcements & Push Notifications (per-category)
 - ✅ Photo Share / Gallery — upload, caption, like/react, report, admin approval
 - ✅ Venue Map & Trade-Show Map (booths link to supplier profiles)
-- ⏳ Session Q&A (prototype shows the pattern)
+- ✅ Session Q&A — submit questions, upvote, official answers
 - ✅ Discussion Board — threads, replies, upvotes, official answers, subscribe, categories, keyword search, "similar discussions" suggestions, post-as identity (personal vs vendor)
 - ✅ Digital Help Desk (Contact RSA) — categories, suggested answers, conversation history
 - ✅ Contact Exchange — request contact, recipient chooses fields, vendor auto-card
@@ -144,11 +149,12 @@ whova-three/
 ## Roadmap
 
 - [x] **Phase 0** — Repo, tooling, tech decision (Expo for Windows-based iOS dev)
-- [x] **Phase 1** — Full interactive prototype (all 3 roles) on GitHub Pages
-- [ ] **Phase 2** — Native Expo build: navigation + Attendee module (agenda, schedule, board, people, help desk, QR)
-- [ ] **Phase 3** — Vendor module (scanner, leads, dashboard) + Admin module
-- [ ] **Phase 4** — Backend & real data (auth, roles, push notifications, ticketing, lead export)
-- [ ] **Phase 5** — TestFlight via EAS Build → App Store
+- [x] **Phase 1** — Interactive prototype (all 3 roles) on GitHub Pages
+- [x] **Phase 2** — **Fully functional mockup** — every core action really works and persists on-device (post replies & threads, help-desk conversations, contact exchange → My Contacts, photo upload/like, vendor lead capture + CSV export, admin broadcasts, moderation, ticket queue). Built to demo like the real app so it can be shown to the owners.
+- [ ] **Phase 3** — Native Expo build: navigation + Attendee module (agenda, schedule, board, people, help desk, QR)
+- [ ] **Phase 4** — Vendor module (scanner, leads, dashboard) + Admin module
+- [ ] **Phase 5** — Backend & real data (auth, roles, push notifications, ticketing, lead export)
+- [ ] **Phase 6** — TestFlight via EAS Build → App Store
 
 ---
 
