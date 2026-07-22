@@ -5,7 +5,7 @@
    ============================================================ */
 (function () {
   const D = window.DATA;
-  const VERSION = 3; // bump when data shape / seeds change
+  const VERSION = 4; // bump when data shape / seeds change
   const state = { role: "attendee", view: "home", params: {}, stack: [] };
 
   const TABS = {
@@ -55,6 +55,11 @@
     });
     D.photos.forEach((p) => { if (typeof p.liked !== "boolean") p.liked = false; });
     D.helpdeskQueue.forEach((t) => { if (!Array.isArray(t.msgs)) t.msgs = [{ from: "them", text: t.preview, time: t.time }]; });
+    D.discussions.forEach((d) => { if (typeof d.locked !== "boolean") d.locked = false; });
+    D.attendees.forEach((a) => {
+      if (!Array.isArray(a.roles)) a.roles = a.isVendor ? ["attendee", "vendor"] : ["attendee"];
+      if (!a.email) a.email = a.name.toLowerCase().replace(/[^a-z0-9]+/g, ".").replace(/^\.|\.$/g, "") + "@example.com";
+    });
   }
 
   /* ---------- helpers ---------- */
@@ -69,6 +74,11 @@
   function meIdentity() { return { author: D.me.name, initials: D.me.initials, color: D.me.color, role: "attendee" }; }
   function vendorIdentity() { const v = myVendor(); return { author: v.company, initials: v.initials, color: v.color, role: "vendor" }; }
   function identity() { return state.role === "vendor" ? vendorIdentity() : meIdentity(); }
+  const ROLE_SET = ["attendee", "vendor", "speaker", "admin"];
+  function nid(pre) { return pre + Math.floor(performance.now()); }
+  function randColor() { return PALETTE[Math.floor(Math.random() * PALETTE.length)]; }
+  function adminIdentity() { return { author: "RSA (Organizer)", initials: "RS", color: "#5b3fd6", role: "admin" }; }
+  function audit(what) { D.auditLog.unshift({ who: D.me.name + " (Admin)", what, time: nowLabel() }); }
 
   function pseudoQR(seed) {
     let hsh = 0;
@@ -97,7 +107,7 @@
     title: null, hero: true,
     body: `
       <div class="hero">
-        <button class="role-pill" style="position:absolute;top:14px;right:16px" onclick="App.openRoles()">${roleIcon()} ${ROLE_LABEL[state.role]} ⇄</button>
+        <button class="role-pill" style="position:absolute;top:14px;right:16px;z-index:5" onclick="App.openRoles()">${roleIcon()} ${ROLE_LABEL[state.role]} ⇄</button>
         <div class="banner"><span class="pill">🔴 Live · Opening Keynote in Ballroom A</span></div>
         <h2>${esc(D.event.name)}</h2>
         <div class="meta"><span>📅 &nbsp;${esc(D.event.dates)}</span><span>📍 &nbsp;${esc(D.event.location)}</span><span>👥 &nbsp;${D.event.attendees.toLocaleString()} attendees</span></div>
@@ -267,7 +277,7 @@
     <div class="card tap" onclick="App.nav('thread',{id:'${d.id}'})">
       <div class="row" style="align-items:flex-start">
         <div class="grow">
-          <h4>${d.pinned ? "📌 " : ""}${esc(d.title)}</h4>
+          <h4>${d.pinned ? "📌 " : ""}${d.locked ? "🔒 " : ""}${esc(d.title)}</h4>
           <div class="thread meta"><span class="tag">${esc(d.cat)}</span><span>${esc(d.author)}${d.role === "vendor" ? " · vendor" : ""}</span><span>· ${esc(d.time)}</span></div>
         </div>
         <div class="count">${d.replyList.length} 💬</div>
@@ -289,9 +299,11 @@
         ${d.official ? `<div class="official"><b>Official answer</b>${esc(d.official)}</div>` : ""}
         <div class="section-title">${d.replyList.length} ${d.replyList.length === 1 ? "reply" : "replies"}</div>
         <div id="reply-list">${d.replyList.map(replyCard).join("")}</div>
-        <div class="field" style="margin-top:8px"><textarea id="reply-box" placeholder="Write a reply…"></textarea></div>
+        ${d.locked
+          ? `<div class="warn" style="margin-top:12px">🔒 This thread was locked by an organizer. No new replies.</div>`
+          : `<div class="field" style="margin-top:8px"><textarea id="reply-box" placeholder="Write a reply…"></textarea></div>
         <div class="thread meta" style="margin:-4px 2px 8px">Posting as <b style="margin-left:4px">${esc(identity().author)}</b>${state.role === "vendor" ? " 🏢" : ""}</div>
-        <button class="btn block" onclick="App.postReply('${d.id}')">Post reply</button>
+        <button class="btn block" onclick="App.postReply('${d.id}')">Post reply</button>`}
       </section>`,
     };
   };
@@ -545,19 +557,35 @@
 
   SCREENS.ad_manage = () => ({
     title: "Manage",
-    body: `<div class="list-tap" style="margin-top:14px">${[
-      ["ad_broadcast", "📢", "Send announcement / push", "Now or scheduled"],
-      ["agenda", "📅", "Manage agenda", "Sessions & rooms"],
-      ["speakers", "🎤", "Manage speakers", ""],
-      ["suppliers", "🏢", "Manage suppliers", "Booths & profiles"],
-      ["ad_users", "👥", "Users & roles", "Assign & dual-role"],
-      ["ad_training", "🎓", "Training management", "Rosters & attendance"],
-      ["ad_maps", "🗺️", "Maps & venue", "Upload & link rooms"],
-      ["ad_reports", "📈", "Reporting", "Export event data"],
-      ["ad_system", "⚙️", "System controls", "Notifications, backup"],
-      ["ad_audit", "🧾", "Audit log", ""],
-    ].map(([id, ico, t, sub]) => `<div class="item" onclick="App.nav('${id}')"><span class="ico">${ico}</span><div class="grow"><h4>${t}</h4>${sub ? `<div class="sub">${esc(sub)}</div>` : ""}</div><span class="chev">›</span></div>`).join("")}</div>`,
+    body: `
+      <div class="section-title" style="margin-left:18px">Content — add &amp; edit</div>
+      <div class="list-tap">${[
+        ["ad_event", "🎪", "Event details", "Name, dates, venue"],
+        ["type:session", "📅", "Agenda / sessions", D.sessions.length + " sessions"],
+        ["type:speaker", "🎤", "Speakers", D.speakers.length + " speakers"],
+        ["type:vendor", "🏢", "Suppliers / exhibitors", D.vendors.length + " booths"],
+        ["type:post", "💬", "Discussion posts", "Create · pin · official · lock"],
+        ["type:announcement", "📢", "Announcements", D.announcements.length + " posted"],
+      ].map(manageRow).join("")}</div>
+      <div class="section-title" style="margin-left:18px">People</div>
+      <div class="list-tap">${[
+        ["type:user", "👥", "Users & roles", "Add people · assign roles"],
+      ].map(manageRow).join("")}</div>
+      <div class="section-title" style="margin-left:18px">Operations</div>
+      <div class="list-tap">${[
+        ["ad_broadcast", "🚀", "Send announcement / push", "Now or scheduled"],
+        ["ad_training", "🎓", "Training management", "Rosters & attendance"],
+        ["ad_maps", "🗺️", "Maps & venue", "Upload & link rooms"],
+        ["ad_reports", "📈", "Reporting", "Export event data"],
+        ["ad_system", "⚙️", "System controls", "Notifications, backup"],
+        ["ad_audit", "🧾", "Audit log", D.auditLog.length + " entries"],
+      ].map(manageRow).join("")}</div>
+      <div style="height:14px"></div>`,
   });
+  const manageRow = ([id, ico, t, sub]) => {
+    const oc = id.startsWith("type:") ? `App.nav('ad_list',{type:'${id.slice(5)}'})` : `App.nav('${id}')`;
+    return `<div class="item" onclick="${oc}"><span class="ico">${ico}</span><div class="grow"><h4>${t}</h4>${sub ? `<div class="sub">${esc(sub)}</div>` : ""}</div><span class="chev">›</span></div>`;
+  };
 
   SCREENS.ad_broadcast = () => ({
     title: "Send announcement", back: true,
@@ -614,16 +642,7 @@
     };
   };
 
-  SCREENS.ad_users = () => ({
-    title: "Users & Roles", back: true,
-    body: `<div class="search"><input placeholder="Search users…" oninput="return false"></div>
-      <section style="padding-top:12px">
-        <div class="card"><div class="row">${avatar(D.me)}<div class="grow"><h4>${esc(D.me.name)}</h4><div class="sub">${esc(D.me.company)}</div></div></div>
-          <div style="margin-top:10px;display:flex;gap:6px;flex-wrap:wrap">${["Attendee", "Vendor", "Admin"].map((r) => `<span class="tag" style="background:var(--brand-tint);color:var(--brand-dark)">${r} ✓</span>`).join("")}</div>
-          <button class="btn ghost sm" style="margin-top:10px" onclick="App.toast('Role editor (demo)')">Edit roles</button></div>
-        ${D.attendees.slice(0, 4).map((a) => `<div class="card row">${avatar(a)}<div class="grow"><h4>${esc(a.name)}</h4><div class="sub">${a.isVendor ? "Attendee, Vendor" : "Attendee"}</div></div><button class="btn ghost sm" onclick="App.toast('Assign role (demo)')">Roles</button></div>`).join("")}
-      </section><div class="demo-note">Dual-role users keep one account, one login, one QR code.</div>`,
-  });
+  SCREENS.ad_users = () => SCREENS.ad_list({ type: "user" });
   SCREENS.ad_training = () => ({
     title: "Training Management", back: true,
     body: `<section style="padding-top:14px">
@@ -649,6 +668,141 @@
     </div><div class="pad"><button class="btn danger block" onclick="App.resetDemo()">↺ Reset demo data</button></div>`,
   });
   SCREENS.ad_audit = () => ({ title: "Audit Log", back: true, body: `<section style="padding-top:14px">${D.auditLog.map(auditRow).join("")}</section>` });
+
+  /* ---------- Admin CRUD engine (config-driven) ---------- */
+  const ENTITY = {
+    session: {
+      title: "Agenda / sessions", singular: "Session", coll: () => D.sessions,
+      row: (s) => ({ h: s.title || "(untitled)", sub: `${D.days[s.day] || ""} · ${s.start} ${s.ampm} · ${s.room}`, badge: "📅" }),
+      fields: [
+        { k: "title", l: "Title", t: "text" },
+        { k: "day", l: "Day", t: "select", int: true, opts: () => D.days.map((d, i) => [i, d]) },
+        { k: "start", l: "Start time", t: "text", ph: "9:00" },
+        { k: "ampm", l: "AM / PM", t: "select", opts: () => [["AM", "AM"], ["PM", "PM"]] },
+        { k: "end", l: "End time", t: "text", ph: "10:00" },
+        { k: "room", l: "Room", t: "text" },
+        { k: "tag", l: "Tag / track label", t: "text", ph: "Keynote · Training · Panel" },
+        { k: "speakers", l: "Speakers", t: "speakers" },
+        { k: "desc", l: "Description", t: "textarea" },
+      ],
+      make: () => ({ id: nid("s"), day: 0, start: "9:00", ampm: "AM", end: "10:00", room: "", tag: "Session", tagBg: "#eaf1ff", tagInk: "#1e50c8", track: "#2f6df6", speakers: [], desc: "", questions: [] }),
+    },
+    speaker: {
+      title: "Speakers", singular: "Speaker", coll: () => D.speakers,
+      row: (s) => ({ h: s.name, sub: `${s.title || ""}${s.company ? " · " + s.company : ""}`, av: s }),
+      fields: [
+        { k: "name", l: "Name", t: "text" },
+        { k: "title", l: "Title", t: "text" },
+        { k: "company", l: "Company", t: "text" },
+        { k: "bio", l: "Bio", t: "textarea" },
+      ],
+      make: () => ({ id: nid("sp"), color: randColor(), initials: "" }),
+      after: (o) => { o.initials = inits(o.name || "?"); },
+    },
+    vendor: {
+      title: "Suppliers / exhibitors", singular: "Supplier", coll: () => D.vendors,
+      row: (v) => ({ h: v.company, sub: `Booth ${v.booth} · ${(v.cats || []).join(", ")}`, av: { name: v.company, initials: v.initials, color: v.color } }),
+      fields: [
+        { k: "company", l: "Company", t: "text" },
+        { k: "booth", l: "Booth #", t: "text" },
+        { k: "mapLoc", l: "Map location", t: "text", ph: "Hall B · Aisle 100" },
+        { k: "cats", l: "Product categories", t: "csv" },
+        { k: "site", l: "Website", t: "text" },
+        { k: "reps", l: "Representatives", t: "csv" },
+        { k: "about", l: "About", t: "textarea" },
+      ],
+      make: () => ({ id: nid("V"), color: randColor(), initials: "", cats: [], reps: [], leads: 0, booth: "" }),
+      after: (o) => { o.initials = inits(o.company || "?"); },
+    },
+    user: {
+      title: "Users & roles", singular: "User", coll: () => D.attendees,
+      row: (a) => ({ h: a.name + (a.isVendor ? " 🏢" : ""), sub: `${a.company || ""} · ${(a.roles || ["attendee"]).join(", ")}`, av: a }),
+      fields: [
+        { k: "name", l: "Name", t: "text" },
+        { k: "title", l: "Title / role at store", t: "text" },
+        { k: "company", l: "Company / store", t: "text" },
+        { k: "email", l: "Email", t: "text" },
+        { k: "roles", l: "Roles — dual-role supported", t: "roles" },
+      ],
+      make: () => ({ id: nid("a"), color: randColor(), initials: "", roles: ["attendee"], isVendor: false }),
+      after: (o) => { o.initials = inits(o.name || "?"); o.isVendor = (o.roles || []).includes("vendor"); if (o.isVendor && !o.vendorId) o.vendorId = D.vendors[0] && D.vendors[0].id; },
+    },
+    announcement: {
+      title: "Announcements", singular: "Announcement", coll: () => D.announcements,
+      row: (a) => ({ h: a.title, sub: `${a.kind} · ${a.time} · ${a.who}`, badge: "📢" }),
+      fields: [
+        { k: "title", l: "Title", t: "text" },
+        { k: "body", l: "Message", t: "textarea" },
+        { k: "kind", l: "Audience", t: "select", opts: () => [["attendee", "All attendees"], ["vendor", "Vendors only"]] },
+      ],
+      make: () => ({ id: nid("an"), kind: "attendee", time: "just now", who: "You (Admin)" }),
+    },
+    post: {
+      title: "Discussion posts", singular: "Post", coll: () => D.discussions,
+      row: (d) => ({ h: (d.pinned ? "📌 " : "") + (d.locked ? "🔒 " : "") + d.title, sub: `${d.cat} · ${d.author} · ${d.replyList.length} replies`, badge: "💬" }),
+      fields: [
+        { k: "title", l: "Title", t: "text" },
+        { k: "cat", l: "Category", t: "select", opts: () => D.categories.map((c) => [c, c]) },
+        { k: "body", l: "Post", t: "textarea" },
+        { k: "official", l: "Official answer (optional)", t: "textarea" },
+        { k: "pinned", l: "Pin to top", t: "bool" },
+        { k: "locked", l: "Lock thread (no replies)", t: "bool" },
+      ],
+      make: () => ({ id: nid("d"), ...adminIdentity(), up: 0, official: null, pinned: false, locked: false, time: "just now", replyList: [] }),
+      after: (o) => { if (!o.official) o.official = null; },
+    },
+  };
+
+  SCREENS.ad_list = (p) => {
+    const cfg = ENTITY[p.type]; if (!cfg) return notFound();
+    const items = cfg.coll();
+    return {
+      title: cfg.title, back: true,
+      actions: `<button class="icon-btn" onclick="App.nav('ad_edit',{type:'${p.type}'})">＋</button>`,
+      body: `<section style="padding-top:14px">${items.map((it) => {
+        const r = cfg.row(it);
+        const av = r.av ? avatar({ initials: r.av.initials || inits(r.av.name || r.av.company || "?"), color: r.av.color || "#5b3fd6" }, "sm") : `<div class="avatar sm" style="background:#5b3fd6">${r.badge || cfg.singular[0]}</div>`;
+        return `<div class="card row">${av}
+          <div class="grow tap" onclick="App.nav('ad_edit',{type:'${p.type}',id:'${it.id}'})"><h4>${esc(r.h)}</h4><div class="sub">${esc(r.sub)}</div></div>
+          <button class="btn ghost sm" onclick="App.nav('ad_edit',{type:'${p.type}',id:'${it.id}'})">Edit</button>
+          <button class="btn danger sm" onclick="App.delEntity('${p.type}','${it.id}')">✕</button></div>`;
+      }).join("") || `<div class="empty">None yet — tap ＋ to add the first one.</div>`}
+        <div class="pad"><button class="btn block" onclick="App.nav('ad_edit',{type:'${p.type}'})">＋ Add ${cfg.singular.toLowerCase()}</button></div></section>`,
+    };
+  };
+
+  SCREENS.ad_edit = (p) => {
+    const cfg = ENTITY[p.type]; if (!cfg) return notFound();
+    const editing = p.id ? cfg.coll().find((x) => x.id === p.id) : null;
+    const o = editing || {};
+    return {
+      title: (editing ? "Edit " : "Add ") + cfg.singular, back: true,
+      body: `<section class="pad">${cfg.fields.map((f) => fieldHTML(f, o)).join("")}
+        <button class="btn block" onclick="App.saveEntity('${p.type}','${p.id || ""}')">${editing ? "Save changes" : "Add " + cfg.singular.toLowerCase()}</button>
+        ${editing ? `<button class="btn danger block" style="margin-top:10px" onclick="App.delEntity('${p.type}','${p.id}')">Delete ${cfg.singular.toLowerCase()}</button>` : ""}
+      </section>`,
+    };
+  };
+
+  function fieldHTML(f, o) {
+    const v = o[f.k];
+    if (f.t === "textarea") return `<div class="field"><label>${f.l}</label><textarea id="f-${f.k}" placeholder="${f.ph || ""}">${esc(v == null ? "" : v)}</textarea></div>`;
+    if (f.t === "csv") return `<div class="field"><label>${f.l}</label><input id="f-${f.k}" value="${esc((v || []).join(", "))}" placeholder="comma, separated"></div>`;
+    if (f.t === "select") return `<div class="field"><label>${f.l}</label><select id="f-${f.k}">${f.opts().map(([ov, ol]) => `<option value="${esc(String(ov))}" ${String(v) === String(ov) ? "selected" : ""}>${esc(ol)}</option>`).join("")}</select></div>`;
+    if (f.t === "bool") return `<div class="field"><div class="card row" style="margin:0"><div class="grow"><h4>${f.l}</h4></div><button id="f-${f.k}" class="toggle ${v ? "on" : ""}" onclick="this.classList.toggle('on')"><span class="knob"></span></button></div></div>`;
+    if (f.t === "roles") return `<div class="field"><label>${f.l}</label><div id="f-roles" class="chip-row" style="flex-wrap:wrap;padding:2px 0">${ROLE_SET.map((r) => `<button class="chip ${(v || []).includes(r) ? "active" : ""}" data-v="${r}" onclick="this.classList.toggle('active')">${r}</button>`).join("")}</div></div>`;
+    if (f.t === "speakers") return `<div class="field"><label>${f.l}</label><div id="f-speakers" class="chip-row" style="flex-wrap:wrap;padding:2px 0">${D.speakers.map((s) => `<button class="chip ${(v || []).includes(s.id) ? "active" : ""}" data-v="${s.id}" onclick="this.classList.toggle('active')">${esc(s.name)}</button>`).join("")}</div></div>`;
+    return `<div class="field"><label>${f.l}</label><input id="f-${f.k}" value="${esc(v == null ? "" : v)}" placeholder="${f.ph || ""}"></div>`;
+  }
+
+  SCREENS.ad_event = () => ({
+    title: "Event details", back: true,
+    body: `<section class="pad">
+      <div class="field"><label>Event name</label><input id="ev-name" value="${esc(D.event.name)}"></div>
+      <div class="field"><label>Dates</label><input id="ev-dates" value="${esc(D.event.dates)}"></div>
+      <div class="field"><label>Location</label><input id="ev-loc" value="${esc(D.event.location)}"></div>
+      <button class="btn block" onclick="App.saveEvent()">Save event details</button></section>`,
+  });
 
   /* ---------- SCAN ---------- */
   SCREENS.scan = () => {
@@ -894,6 +1048,45 @@
       const t = byId(D.helpdeskQueue, id); const r = val("tk-reply").trim(); if (!r) { toast("Type a reply"); return; }
       t.msgs.push({ from: "staff", text: r, time: nowLabel() }); if (!t.assignee) t.assignee = "You"; if (t.status === "open") t.status = "assigned";
       persist(); render({ bottom: true }); toast("Reply sent");
+    },
+
+    // Admin CRUD
+    saveEntity(type, id) {
+      const cfg = ENTITY[type]; if (!cfg) return;
+      const editing = id ? cfg.coll().find((x) => x.id === id) : null;
+      const first = cfg.fields[0];
+      if (first && (first.t === "text" || first.t === "textarea") && !val("f-" + first.k).trim()) { toast("Enter a " + first.l.toLowerCase()); return; }
+      const o = editing || cfg.make();
+      cfg.fields.forEach((f) => {
+        if (f.t === "csv") o[f.k] = val("f-" + f.k).split(",").map((s) => s.trim()).filter(Boolean);
+        else if (f.t === "bool") { const el = document.getElementById("f-" + f.k); o[f.k] = !!el && el.classList.contains("on"); }
+        else if (f.t === "roles") o[f.k] = Array.from(document.querySelectorAll("#f-roles .chip.active")).map((c) => c.dataset.v);
+        else if (f.t === "speakers") o[f.k] = Array.from(document.querySelectorAll("#f-speakers .chip.active")).map((c) => c.dataset.v);
+        else if (f.t === "select") o[f.k] = f.int ? parseInt(val("f-" + f.k), 10) : val("f-" + f.k);
+        else o[f.k] = val("f-" + f.k);
+      });
+      if (cfg.after) cfg.after(o);
+      if (!editing) cfg.coll().unshift(o);
+      audit((editing ? "Edited " : "Added ") + cfg.singular + " “" + esc(o[first.k]) + "”");
+      persist(); App.back(); toast(editing ? "Saved changes" : cfg.singular + " added");
+    },
+    delEntity(type, id) {
+      const cfg = ENTITY[type]; if (!cfg) return;
+      const it = cfg.coll().find((x) => x.id === id); const nm = it ? (it.title || it.name || it.company || cfg.singular) : cfg.singular;
+      openSheet(`<h3>Delete ${cfg.singular.toLowerCase()}?</h3><p class="sub">“${esc(nm)}” will be removed. This can't be undone (until you reset demo data).</p>
+        <button class="btn danger block" onclick="App.doDelEntity('${type}','${id}')">Delete</button>
+        <button class="btn ghost block" style="margin-top:8px" onclick="App.closeSheet()">Cancel</button>`);
+    },
+    doDelEntity(type, id) {
+      const cfg = ENTITY[type]; const c = cfg.coll(); const i = c.findIndex((x) => x.id === id);
+      let nm = ""; if (i >= 0) { nm = c[i].title || c[i].name || c[i].company || ""; c.splice(i, 1); }
+      audit("Deleted " + cfg.singular + " “" + esc(nm) + "”"); persist(); closeSheet();
+      if (state.view === "ad_edit") App.back(); else render();
+      toast(cfg.singular + " deleted");
+    },
+    saveEvent() {
+      D.event.name = val("ev-name") || D.event.name; D.event.dates = val("ev-dates"); D.event.location = val("ev-loc");
+      audit("Edited event details"); persist(); App.back(); toast("Event updated");
     },
 
     resetDemo() {

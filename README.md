@@ -40,7 +40,7 @@ Everything below is live, not a placeholder:
 - 🎧 **Help Desk (Contact RSA)** → conversational support with **suggested answers** surfaced before you send.
 - 🔳 **Universal QR** → the same code drives Registration check-in, Training check-in (green ✓ / red ✗), Vendor lead capture, and Admin lookup — each scanner sees a different result.
 - 🧲 **Vendor** → dashboard, lead list + export, lead scanner, editable booth profile.
-- 🛡️ **Admin** → event overview, broadcast/push, moderation queue, help-desk queue, users & roles, training rosters, reporting, audit log.
+- 🛡️ **Admin (full back office)** → **add & edit** sessions, speakers, suppliers, users (with multiple roles), announcements, and discussion posts (create / pin / mark official / lock); edit event details; broadcast push; moderation queue; help-desk queue; reporting; audit log. Every add/edit/delete updates the live data and is written to the audit log.
 
 ### Enabling GitHub Pages (one-time, ~20 seconds)
 1. Repo **Settings → Pages** → https://github.com/NORS3AI/whova-three/settings/pages
@@ -150,7 +150,7 @@ whova-three/
 
 - [x] **Phase 0** — Repo, tooling, tech decision (Expo for Windows-based iOS dev)
 - [x] **Phase 1** — Interactive prototype (all 3 roles) on GitHub Pages
-- [x] **Phase 2** — **Fully functional mockup** — every core action really works and persists on-device (post replies & threads, help-desk conversations, contact exchange → My Contacts, photo upload/like, vendor lead capture + CSV export, admin broadcasts, moderation, ticket queue). Built to demo like the real app so it can be shown to the owners.
+- [x] **Phase 2** — **Fully functional mockup** — every core action really works and persists on-device (post replies & threads, help-desk conversations, contact exchange → My Contacts, photo upload/like, vendor lead capture + CSV export, admin broadcasts, moderation, ticket queue) **plus a complete admin back office** with add/edit/delete CRUD for sessions, speakers, suppliers, users & roles, announcements, discussion posts, and event details. Built to demo like the real app so it can be shown to the owners.
 - [ ] **Phase 3** — Native Expo build: navigation + Attendee module (agenda, schedule, board, people, help desk, QR)
 - [ ] **Phase 4** — Vendor module (scanner, leads, dashboard) + Admin module
 - [ ] **Phase 5** — Backend & real data (auth, roles, push notifications, ticketing, lead export)
