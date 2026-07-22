@@ -100,7 +100,7 @@ Grouped by role. ✅ = represented in the prototype · ⏳ = planned for the nat
 - ✅ Discussion Board — threads, replies, upvotes, official answers, subscribe, categories, keyword search, "similar discussions" suggestions, post-as identity (personal vs vendor)
 - ✅ Digital Help Desk (Contact RSA) — categories, suggested answers, conversation history
 - ✅ Contact Exchange — request contact, recipient chooses fields, vendor auto-card
-- ✅ Personal Profile + privacy controls
+- ✅ Personal Profile + **editable Account details** (name, title, company, email, phone, bio, privacy) — self-service in every role view (Attendee, Vendor, Admin)
 - ✅ Notification Settings — mute categories (emergency always on)
 - ✅ Universal Attendee QR Code
 

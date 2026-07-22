@@ -5,7 +5,7 @@
    ============================================================ */
 (function () {
   const D = window.DATA;
-  const VERSION = 4; // bump when data shape / seeds change
+  const VERSION = 5; // bump when data shape / seeds change
   const state = { role: "attendee", view: "home", params: {}, stack: [] };
 
   const TABS = {
@@ -46,6 +46,8 @@
   }
   function ensureDefaults() {
     if (!Array.isArray(D.me.contactsReceived)) D.me.contactsReceived = [];
+    if (!D.me.email) D.me.email = "jordan.cole@northwind.example";
+    if (typeof D.me.phone !== "string") D.me.phone = "(555) 204-1180";
     if (!Array.isArray(D.bookmarks)) D.bookmarks = [];
     D.discussions.forEach((d) => { if (!Array.isArray(d.replyList)) d.replyList = []; });
     D.sessions.forEach((s) => {
@@ -421,10 +423,33 @@
       title: "My Profile", back: true,
       body: `${profileBody(m, m.bio)}
         <section class="pad">
+          <button class="btn block" onclick="App.nav('account')">✏️ Edit account details</button>
           <div class="section-title">Privacy — what others can request</div>
           ${["name", "email", "phone", "company"].map((k) => `<div class="card row"><div class="grow"><h4 style="text-transform:capitalize">${k}</h4></div><button class="toggle ${m.privacy[k] ? "on" : ""}" onclick="App.togglePriv('${k}',this)"><span class="knob"></span></button></div>`).join("")}
           <button class="btn ghost block" style="margin-top:6px" onclick="App.nav('qr')">🔳 Show my event QR code</button>
         </section>`,
+    };
+  };
+
+  SCREENS.account = () => {
+    const m = D.me;
+    return {
+      title: "Account details", back: true,
+      body: `<section class="pad">
+        <div style="text-align:center;margin-bottom:6px">${avatar(m, "lg")}
+          <div class="sub" style="margin-top:10px">Signed in as <b>${(m.roles || []).map((r) => ROLE_LABEL[r]).join(" · ")}</b> — one account, one login</div></div>
+        <div class="field"><label>Full name</label><input id="ac-name" value="${esc(m.name)}"></div>
+        <div class="field"><label>Title / role at store</label><input id="ac-title" value="${esc(m.role || "")}"></div>
+        <div class="field"><label>Company / store</label><input id="ac-company" value="${esc(m.company || "")}"></div>
+        <div class="field"><label>Email</label><input id="ac-email" value="${esc(m.email || "")}"></div>
+        <div class="field"><label>Phone</label><input id="ac-phone" value="${esc(m.phone || "")}"></div>
+        <div class="field"><label>Bio</label><textarea id="ac-bio">${esc(m.bio || "")}</textarea></div>
+        ${state.role === "vendor" ? `<div class="card row tap" onclick="App.nav('v_company')"><div class="avatar sm" style="background:${myVendor().color}">${myVendor().initials}</div><div class="grow"><h4>Company / booth profile</h4><div class="sub">Edit ${esc(myVendor().company)}</div></div><span class="chev">›</span></div>` : ""}
+        <div class="section-title">Privacy — what others can request</div>
+        ${["name", "email", "phone", "company"].map((k) => `<div class="card row"><div class="grow"><h4 style="text-transform:capitalize">${k}</h4></div><button class="toggle ${m.privacy[k] ? "on" : ""}" onclick="App.togglePriv('${k}',this)"><span class="knob"></span></button></div>`).join("")}
+        <button class="btn block" style="margin-top:8px" onclick="App.saveAccount()">Save account details</button>
+        <div class="demo-note">These details are shared with others only when you approve a contact request, per your privacy settings above.</div>
+      </section>`,
     };
   };
   SCREENS.notif = () => ({
@@ -448,6 +473,7 @@
   SCREENS.more = () => {
     const links = {
       attendee: [
+        ["account", "⚙️", "Account details", "Edit name, email, phone & privacy"],
         ["profile", "👤", "My Profile", "Bio, company & privacy"],
         ["qr", "🔳", "My QR Code", D.me.id],
         ["contacts", "🪪", "My Contacts", D.me.contactsReceived.length + " saved"],
@@ -459,8 +485,9 @@
         ["helpdesk", "🎧", "Help Desk (Contact RSA)", ""],
       ],
       vendor: [
+        ["account", "⚙️", "Account details", "Edit your personal account"],
+        ["v_company", "🏢", "Company / booth profile", ""],
         ["v_announce", "📢", "Vendor Announcements", ""],
-        ["v_company", "🏢", "Company Profile", ""],
         ["qr", "🔳", "My QR Code", ""],
         ["notif", "🔔", "Notification Settings", ""],
         ["profile", "👤", "My Profile", ""],
@@ -570,6 +597,7 @@
       <div class="section-title" style="margin-left:18px">People</div>
       <div class="list-tap">${[
         ["type:user", "👥", "Users & roles", "Add people · assign roles"],
+        ["account", "⚙️", "My account details", "Edit your own name, email & privacy"],
       ].map(manageRow).join("")}</div>
       <div class="section-title" style="margin-left:18px">Operations</div>
       <div class="list-tap">${[
@@ -1087,6 +1115,14 @@
     saveEvent() {
       D.event.name = val("ev-name") || D.event.name; D.event.dates = val("ev-dates"); D.event.location = val("ev-loc");
       audit("Edited event details"); persist(); App.back(); toast("Event updated");
+    },
+    saveAccount() {
+      const m = D.me;
+      const name = val("ac-name").trim(); if (!name) { toast("Enter your name"); return; }
+      m.name = name; m.role = val("ac-title"); m.company = val("ac-company"); m.email = val("ac-email"); m.phone = val("ac-phone"); m.bio = val("ac-bio");
+      m.initials = inits(m.name);
+      if (state.role === "admin") audit("Updated own account details");
+      persist(); App.back(); toast("Account details saved");
     },
 
     resetDemo() {
